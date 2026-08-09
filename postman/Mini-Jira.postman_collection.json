@@ -1,0 +1,51 @@
+{
+  "info": {
+    "_postman_id": "3b21c8f3-efe4-4bd7-b9b3-cdfd5e07aed2",
+    "name": "Mini-Jira",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "46672552",
+    "_collection_link": "https://go.postman.co/collection/46672552-3b21c8f3-efe4-4bd7-b9b3-cdfd5e07aed2?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Create Admin User",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Create Member User",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Create the project",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Add Project Member",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Get Project By ID",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    }
+  ]
+}
