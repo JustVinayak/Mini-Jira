@@ -100,7 +100,7 @@ JPA / Hibernate
 MySQL
 ```
 ## Main Layers
-
+```text
 controller/
 Handles REST API requests
 
@@ -115,7 +115,8 @@ Contains JPA entities
 
 enums/
 Contains application enums
-
+```
+---
 ## ⚙️ Getting Started
 
 ### Prerequisites
@@ -128,25 +129,24 @@ Make sure you have installed:
 * IntelliJ IDEA (recommended)
 * Git
 
-**1. Clone the repository**
+### **1. Clone the repository**
 
 Navigate into the project:
 cd mini-jira
 
-**2. Create the MySQL database**
+### **2. Create the MySQL database**
 
 Open MySQL Workbench or MySQL Command Line Client and run:
 CREATE DATABASE minijira;
 
-**3. Configure the database**
+### **3. Configure the database**
 
 Configure your database connection in:
-src/main/resources/application.properties
+_src/main/resources/application.properties_
 
 Example:
 
 spring.application.name=minijira
-
 spring.datasource.url=jdbc:mysql://localhost:3306/minijira
 
 _Set the following environment variables:_
@@ -154,13 +154,26 @@ _Set the following environment variables:_
 1. [ ] DB_USERNAME = root
 2. [ ] DB_PASSWORD = your_mysql_password
 
-**4. Run the application**
+### **4. Run the application**
 
 _.\mvnw.cmd spring-boot:run_
 
 The application should start on:
 http://localhost:8080
+---
+### 📡 Current APIs
+**Users**
+* POST /api/users
+* GET /api/users
+* GET /api/users/{id}
 
+**Projects**
+* POST /api/projects
+* GET /api/projects
+* GET /api/projects/{id}
+* POST /api/projects/{id}/members
+
+--- 
 ### 🧪 API Testing
 
 A Postman collection is included in the repository:
@@ -177,12 +190,14 @@ The collection contains requests for testing:
 
 Import the collection into Postman and make sure the Spring Boot application is running before sending requests.
 
+---
 ### 👨‍💻 Author
 
-**Vinayak Bhatt**
+### **Vinayak Bhatt**
 
 _Computer Science Graduate | Full Stack Developer_
 
+---
 ### ⭐ Project Goal
 
 MiniJira is being developed as a full-stack project to demonstrate practical experience with:
