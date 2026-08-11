@@ -131,23 +131,23 @@ Make sure you have installed:
 
 ### **1. Clone the repository**
 
-Navigate into the project:
-cd mini-jira
+    Navigate into the project:
+    cd mini-jira
 
 ### **2. Create the MySQL database**
 
-Open MySQL Workbench or MySQL Command Line Client and run:
-CREATE DATABASE minijira;
+    Open MySQL Workbench or MySQL Command Line Client and run:
+    CREATE DATABASE minijira;
 
 ### **3. Configure the database**
 
-Configure your database connection in:
-_src/main/resources/application.properties_
+    Configure your database connection in:
+    src/main/resources/application.properties
 
-Example:
+    Example:
 
-spring.application.name=minijira
-spring.datasource.url=jdbc:mysql://localhost:3306/minijira
+    spring.application.name=minijira
+    spring.datasource.url=jdbc:mysql://localhost:3306/minijira
 
 _Set the following environment variables:_
 
@@ -156,12 +156,13 @@ _Set the following environment variables:_
 
 ### **4. Run the application**
 
-_.\mvnw.cmd spring-boot:run_
+    .\mvnw.cmd spring-boot:run
 
-The application should start on:
-http://localhost:8080
 ---
+
 ### 📡 Current APIs
+
+---
 **Users**
 * POST /api/users
 * GET /api/users
@@ -176,6 +177,7 @@ http://localhost:8080
 --- 
 ### 🧪 API Testing
 
+---
 A Postman collection is included in the repository:
 
 _postman/mini-jira.postman_collection.json_
@@ -193,6 +195,7 @@ Import the collection into Postman and make sure the Spring Boot application is 
 ---
 ### 👨‍💻 Author
 
+---
 ### **Vinayak Bhatt**
 
 _Computer Science Graduate | Full Stack Developer_
@@ -200,6 +203,7 @@ _Computer Science Graduate | Full Stack Developer_
 ---
 ### ⭐ Project Goal
 
+---
 MiniJira is being developed as a full-stack project to demonstrate practical experience with:
 
 1. [x] Java
