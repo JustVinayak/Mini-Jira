@@ -20,6 +20,9 @@ The project is being built using Spring Boot and MySQL, with a RESTful backend a
 - JPA/Hibernate entity relationships
 - Service and repository layers
 - Postman API collection for testing
+- JWT-based stateless authentication
+- Role-based access control (Admin / Member)
+- BCrypt password hashing
 
 [//]: # (### Coming Soon)
 
@@ -154,6 +157,8 @@ _Set the following environment variables:_
 1. [ ] DB_USERNAME = root
 2. [ ] DB_PASSWORD = your_mysql_password
 
+On first run, a default admin user is seeded automatically (admin@minijira.com / admin123). Use this to log in and create additional users.
+
 ### **4. Run the application**
 
     .\mvnw.cmd spring-boot:run
@@ -217,3 +222,17 @@ MiniJira is being developed as a full-stack project to demonstrate practical exp
 9. [x] Git & GitHub
 
 The project focuses on clean architecture, RESTful API design, database relationships, and scalable backend development.
+
+---
+### 🧐 Challenges & Debugging
+
+---
+
+* Diagnosed a misleading 403 error that was actually masking an internal 500 —
+  Spring Security was blocking the internal `/error` forward before Spring Boot
+  could render the real exception. Fixed by explicitly permitting `/error` in
+  the security config, which surfaced the real root cause (a duplicate DB entry).
+
+
+* Reviewed and mitigated CVE-2024-31033 in the JWT dependency by generating
+  signing keys as random bytes rather than deriving them from a string.
