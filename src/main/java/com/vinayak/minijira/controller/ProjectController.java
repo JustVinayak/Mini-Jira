@@ -3,6 +3,7 @@ package com.vinayak.minijira.controller;
 import com.vinayak.minijira.entity.Project;
 import com.vinayak.minijira.service.ProjectService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +19,7 @@ public class ProjectController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Project> create(
             @RequestBody Project project,
             @RequestParam Long ownerId) {
@@ -42,6 +44,7 @@ public class ProjectController {
     }
 
     @PostMapping("/{id}/members")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Project> addMember(
             @PathVariable Long id,
             @RequestParam Long userId) {
