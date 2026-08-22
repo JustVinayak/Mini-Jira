@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.ArrayList;
+import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -27,6 +30,14 @@ public class Project {
     @ManyToOne
     @JoinColumn(name = "owner_id")
     private User owner;
+
+    @JsonIgnore
+    @OneToMany(
+            mappedBy = "project",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<Task> tasks = new ArrayList<>();
 
     @ManyToMany
     @JoinTable(

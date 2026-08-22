@@ -4,11 +4,25 @@ import { jwtDecode } from "jwt-decode";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-    const [token, setToken] = useState(localStorage.getItem("token"));
+    const [token, setToken] = useState(
+        localStorage.getItem("token")
+    );
 
-    const decoded = token ? jwtDecode(token) : null;
+    let decoded = null;
+
+    if (token) {
+        try {
+            decoded = jwtDecode(token);
+        } catch (error) {
+            console.error("Invalid JWT:", error);
+            localStorage.removeItem("token");
+            setToken(null);
+        }
+    }
+
     const role = decoded?.role ?? null;
     const email = decoded?.sub ?? null;
+    const userId = decoded?.userId ?? null;
 
     const loginUser = (newToken) => {
         localStorage.setItem("token", newToken);
@@ -26,6 +40,7 @@ export function AuthProvider({ children }) {
                 token,
                 role,
                 email,
+                userId,
                 loginUser,
                 logoutUser,
             }}

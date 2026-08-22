@@ -40,12 +40,14 @@ class JwtUtilTest {
 
         String token = jwtUtil.generateToken(
                 "test@test.com",
-                "ADMIN"
+                "ADMIN",
+                42L
         );
 
         assertTrue(jwtUtil.isTokenValid(token));
         assertEquals("test@test.com", jwtUtil.extractEmail(token));
         assertEquals("ADMIN", jwtUtil.extractRole(token));
+        assertEquals(42L, jwtUtil.extractUserId(token));
     }
 
     @Test
@@ -61,7 +63,8 @@ class JwtUtilTest {
 
         String token = jwtUtil.generateToken(
                 "test@test.com",
-                "MEMBER"
+                "MEMBER",
+                42L
         );
 
         String tampered =

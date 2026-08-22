@@ -18,3 +18,11 @@ export const createTask = (data, projectId, assigneeId) =>
         `/tasks?projectId=${projectId}${assigneeId ? `&assigneeId=${assigneeId}` : ""}`,
         data
     );
+
+export const deleteTask = (id) =>
+    axiosInstance.delete(`/tasks/${id}`);
+
+export const getProjectSummary = (projectId) =>
+    axiosInstance.get(
+        `/tasks/project/${projectId}/summary`
+    );

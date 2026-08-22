@@ -1,9 +1,13 @@
 import { useDraggable } from "@dnd-kit/core";
+import { deleteTask } from "../api/taskApi";
+import { useAuth } from "../context/AuthContext";
 
 export default function TaskCard({
     task,
     overlay = false,
+    onDeleted,
 }) {
+    const { role } = useAuth();
     const {
         attributes,
         listeners,
@@ -20,6 +24,30 @@ export default function TaskCard({
                   transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
               }
             : undefined;
+
+    const handleDelete = async (event) => {
+        event.stopPropagation();
+
+        const confirmed = window.confirm(
+            "Delete this task?"
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            await deleteTask(task.id);
+            onDeleted?.(task.id);
+        } catch (err) {
+            console.error("Failed to delete task:", err);
+
+            alert(
+                err.response?.data?.error ||
+                "Failed to delete task"
+            );
+        }
+    };
 
     return (
         <div
@@ -38,6 +66,18 @@ export default function TaskCard({
                 }
             `}
         >
+            {!overlay && role === "ADMIN" && (
+                <button
+                    type="button"
+                    className="task-delete-btn"
+                    onClick={handleDelete}
+                    title="Delete task"
+                    aria-label={`Delete ${task.title}`}
+                >
+                    ×
+                </button>
+            )}
+
             <h4>{task.title}</h4>
 
             {task.description && (

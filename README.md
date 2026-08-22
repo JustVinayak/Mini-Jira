@@ -18,12 +18,28 @@ This project was built in phases — backend foundation, business logic + testin
 ---
 ## 🚀 Features
 
-1. [x] **Authentication & Security:** JWT login, BCrypt hashing, and role-based permissions (`SecurityConfig` & `@PreAuthorize`).
-2. [x] **Project Management:** Complete project lifecycle, ownership tracking, and member assignment.
-3. [x] **Task Management:** Full CRUD operations with priority indicators, due dates, filtering, and strict business-rule validation.
-4. [x] **Interactive Kanban Board:** Drag-and-drop workflow (To Do, In Progress, Done) featuring optimistic UI updates and auto-rollback on failure.
-5. [x] **Comments System:** Threaded task-level collaboration with add and delete capabilities.
-6. [x] **Robust Backend:** Global JSON exception handling (400/401/404/409) and deep JUnit/Mockito test coverage.
+### 🔐 Authentication & Security
+* **Role-Based Access Control:** Secure **JWT login** alongside **BCrypt hashing** for passwords.
+* **Enforced Permissions:** **Admin vs. Member permissions** strictly enforced at both the URL level (`SecurityConfig`) and method level (`@PreAuthorize`).
+
+### 📂 Project & Member Management
+* **Lifecycle Tracking:** Complete **CRUD operations** on projects including ownership tracking and structural relational modeling.
+* **Cascading Deletions:** Safe deletion handles edge cases. Deleting a project **cascades to its tasks and comments**.
+* **Automatic Un-assignment:** Removing a member from a project **automatically un-assigns** them from tasks within that project to maintain system integrity.
+
+### 📋 Task Management & Collaboration
+* **Full Domain CRUD:** Complete control over tasks and threaded comment streams without relying on external API tools like Postman.
+* **Business Rule Validation:** Strict enforcement ensures data integrity. Tasks can **only be assigned to project members**, backed by scoped frontend dropdowns and backend validation.
+* **Granular Control:** Complete task tracking featuring **priority indicators, due dates, and custom filtering**.
+
+### 🎛️ Interactive Kanban Board & UI
+* **Drag-and-Drop Workflow:** Seamless task transitions across status states (*To Do, In Progress, Done*) featuring a lifted drag-overlay animation.
+* **Optimistic UI Updates:** Instant visual feedback on the frontend that triggers an **automatic rollback** if the backend API call fails.
+* **Progress Tracking:** A **live progress bar** showing real-time completion percentages and task counts by status, updating dynamically after every action.
+
+### 🛡️ Robust Architecture & Testing
+* **Clean Error Handling:** A **Global Exception Handler** processes runtime errors (400, 401, 404, 409) into structured JSON responses rather than raw stack traces.
+* **Deep Test Coverage:** Robust service-layer validation built using **JUnit and Mockito**, covering happy paths, edge cases, and business rule violations.
 
 ---
 
@@ -152,25 +168,30 @@ The app runs at `http://localhost:5173` and expects the backend at `http://local
 
 ---
 
-### 📡 Current APIs
+## 📡 Current APIs
 
 ---
-### API Endpoints
 
-| Method | Endpoint | Access |
+### 🌐 API Endpoints
+
+| Method | Endpoint | Access / Notes |
 | :--- | :--- | :--- |
-| POST | `/api/auth/login` | Public |
-| GET/POST | `/api/users` | Public* |
-| GET/POST | `/api/projects` | Authenticated |
-| POST | `/api/projects/{id}/members` | Authenticated |
-| DELETE | `/api/projects/{id}` | Admin only |
-| GET/POST | `/api/tasks` | Authenticated |
-| PATCH | `/api/tasks/{id}/status` | Authenticated |
-| PATCH | `/api/tasks/{id}/assign` | Authenticated |
-| GET/POST | `/api/comments` | Authenticated |
+| **POST** | `/api/auth/login` | Public |
+| **GET / POST** | `/api/users` | Public* |
+| **GET / POST** | `/api/projects` | Authenticated |
+| **DELETE** | `/api/projects/{id}` | Admin only — *cascades to the project's tasks and comments* |
+| **POST** | `/api/projects/{id}/members` | Authenticated |
+| **DELETE** | `/api/projects/{id}/members/{userId}` | Admin only — *also un-assigns that user's tasks in the project* |
+| **GET / POST** | `/api/tasks` | Authenticated |
+| **GET** | `/api/tasks/project/{projectId}/summary` | Authenticated — *returns status counts + percent complete* |
+| **PATCH** | `/api/tasks/{id}/status` | Authenticated |
+| **PATCH** | `/api/tasks/{id}/assign` | Authenticated |
+| **DELETE** | `/api/tasks/{id}` | Authenticated |
+| **GET / POST** | `/api/comments` | Authenticated |
+
 
 --- 
-### 🧪 Testing
+## 🧪 Testing
 
 ---
 ### Testing & Quality Assurance
@@ -205,7 +226,7 @@ Status Persisted ➔ Page Refreshed ➔ PATCH to Backend ➔ Task Dragged
 ```
 
 ---
-### 🛡️ Security Architecture
+## 🛡️ Security Architecture
 
 ---
 
@@ -216,19 +237,45 @@ Status Persisted ➔ Page Refreshed ➔ PATCH to Backend ➔ Task Dragged
 * **Dev Environment Note:** The `/api/users` endpoint is temporarily open (`permitAll()`) for local bootstrapping via a startup `DataSeeder`. *Production warning:* Must be restricted to `hasRole('ADMIN')` to eliminate privilege escalation risks.
 
 ---
-### 🧐 Challenges & Debugging
+## 🧐 Challenges & Debugging
 
 ---
+
+A few real-world bottlenecks encountered and resolved during development, highlighting key debugging processes and architectural takeaways:
 
 * **The Misleading 403 (Masked 500 Error):**
-  * *The Issue:* Spring Security blocked internal `/error` forwards, causing all unhandled runtime exceptions to surface as a generic `403 Forbidden`.
-  * *The Fix:* Enabled security debug logging, tracked the filter behavior, and explicitly allowed `/error` paths in the configuration. This exposed the actual underlying issue (a duplicate-email database constraint violation).
+  * **The Issue:** Spring Security was blocking the internal `/error` forward before Spring Boot could render the real exception. As a result, every unhandled application error surfaced to the client as a generic `403 Forbidden` regardless of its actual cause.
+  * **The Resolution:** Enabled Spring Security debug logging, which revealed the security filter chain was securing `GET /error` rather than the original request. Explicitly permitting the `/error` path in the security configuration exposed the true underlying root cause (a duplicate-email database constraint violation).
+
 * **Seeded Admin Hash Mismatch:**
-  * *The Issue:* The initial administrative account failed authentication checks.
-  * *The Fix:* Inspected the raw MySQL password column and found the startup seeder executed before BCrypt was fully wired into the user service layer. Remediated by re-generating and comparing fresh cryptographic hashes.
+  * **The Issue:** The initial database-seeded administrative account repeatedly failed authentication checks during initial testing.
+  * **The Resolution:** Inspected the raw password column directly within the MySQL database and compared it against a freshly generated BCrypt hash. Diagnosed that the startup seeder executed once before BCrypt hashing was fully wired into the `UserService`. Re-seeded the account with a properly generated cryptographic hash.
+
+* **Silent Jackson Infinite Recursion:**
+  * **The Issue:** A bidirectional relationship between `Task.comments` and `Comment.task` caused Jackson's default serializer to walk the cycle indefinitely. Because the HTTP response started streaming with a `200 OK` status before the serializer failed, the client received a truncated, malformed JSON body. This caused the frontend's `.filter()` chain to break silently on only *one* specific project that actually contained comments.
+  * **The Resolution:** Inspected the raw network payload directly rather than trusting the deceptive `200` status code. Resolved the issue by adding `@JsonIgnoreProperties` on the back-reference sides of each bidirectional relationship (`Comment.task`, `Task.project`).
+  * **Architectural Takeaway:** Migrating to dedicated Data Transfer Objects (DTOs) instead of exposing raw JPA entities directly to the controller layer is a scheduled technical debt follow-up.
 
 ---
-### 👨‍💻 Author
+## ⚠️ Known Limitations & Future Enhancements
+
+These deliberate design choices and technical trade-offs were made to streamline the core feature set and simplify the initial project bootstrap:
+
+* **Open User Registration Endpoint:**
+  * **Current State:** `POST /api/users` is temporarily configured with `permitAll()` to simplify local environment setup and ease the initial admin bootstrap process.
+  * **Production Target:** In a production-hardened deployment, this endpoint must be locked down behind an explicit `.hasRole('ADMIN')` check.
+
+* **Deferred User Lifecycle & Role Management:**
+  * **Current State:** Users are created with static roles. The system currently lacks features for user deletion or role promotion/demotion.
+  * **Reasoning:** Role modifications are highly security-sensitive and introduce risks like privilege self-escalation. This complexity was deliberately deferred to focus on core project and task tracking mechanisms.
+
+* **Direct Entity Serialization:**
+  * **Current State:** Database/JPA entities are serialized directly to the controller layer rather than mapping through dedicated Data Transfer Objects (DTOs).
+  * **Current Safeguard:** This architecture operates reliably now that bidirectional cycles are safely guarded by `@JsonIgnoreProperties` (see *Notable Debugging*).
+  * **Production Target:** Abstracting the database layer out of the API layer with a comprehensive DTO mapping structure (e.g., using MapStruct) remains a priority technical debt task.
+
+---
+## 👨‍💻 Author
 
 ---
 ### **Vinayak Bhatt**

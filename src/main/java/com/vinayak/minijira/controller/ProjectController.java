@@ -53,4 +53,25 @@ public class ProjectController {
                 projectService.addMember(id, userId)
         );
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id) {
+
+        projectService.deleteProject(id);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/members/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Project> removeMember(
+            @PathVariable Long id,
+            @PathVariable Long userId) {
+
+        return ResponseEntity.ok(
+                projectService.removeMember(id, userId)
+        );
+    }
 }

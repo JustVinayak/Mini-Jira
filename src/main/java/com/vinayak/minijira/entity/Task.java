@@ -8,6 +8,9 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.ArrayList;
+import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.LocalDate;
 
@@ -40,9 +43,18 @@ public class Task {
 
     @ManyToOne
     @JoinColumn(name = "assignee_id")
+    @JsonIgnoreProperties({"tasks"})
     private User assignee;
 
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false)
+    @JsonIgnoreProperties({"tasks", "members"})
     private Project project;
+
+    @OneToMany(
+            mappedBy = "task",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<Comment> comments = new ArrayList<>();
 }

@@ -6,6 +6,7 @@ import com.vinayak.minijira.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 import java.util.List;
 
@@ -79,5 +80,14 @@ public class TaskController {
         taskService.deleteTask(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/project/{projectId}/summary")
+    public ResponseEntity<Map<String, Object>> getSummary(
+            @PathVariable Long projectId) {
+
+        return ResponseEntity.ok(
+                taskService.getProjectSummary(projectId)
+        );
     }
 }

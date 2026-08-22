@@ -1,7 +1,12 @@
 import { useDroppable } from "@dnd-kit/core";
 import TaskCard from "./TaskCard";
 
-export default function TaskColumn({ id, title, tasks }) {
+export default function TaskColumn({
+    id,
+    title,
+    tasks,
+    onTaskDeleted,
+}) {
     const { setNodeRef, isOver } = useDroppable({ id });
 
     return (
@@ -23,6 +28,7 @@ export default function TaskColumn({ id, title, tasks }) {
                     <TaskCard
                         key={task.id}
                         task={task}
+                        onDeleted={onTaskDeleted}
                     />
                 ))
             )}

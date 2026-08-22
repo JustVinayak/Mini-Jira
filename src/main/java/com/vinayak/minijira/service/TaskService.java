@@ -9,6 +9,10 @@ import com.vinayak.minijira.repository.TaskRepository;
 import com.vinayak.minijira.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import java.util.List;
 
@@ -88,5 +92,39 @@ public class TaskService {
 
     public void deleteTask(Long id) {
         taskRepository.deleteById(id);
+    }
+
+    public Map<String, Object> getProjectSummary(Long projectId) {
+
+        List<Task> tasks = taskRepository.findByProjectId(projectId);
+
+        Map<String, Long> statusCounts = tasks.stream()
+                .collect(Collectors.groupingBy(
+                        task -> task.getStatus().name(),
+                        Collectors.counting()
+                ));
+
+        long total = tasks.size();
+
+        long done = statusCounts.getOrDefault(
+                "DONE",
+                0L
+        );
+
+        double percentComplete =
+                total == 0
+                        ? 0
+                        : (done * 100.0) / total;
+
+        Map<String, Object> summary = new HashMap<>();
+
+        summary.put("totalTasks", total);
+        summary.put("statusCounts", statusCounts);
+        summary.put(
+                "percentComplete",
+                Math.round(percentComplete)
+        );
+
+        return summary;
     }
 }

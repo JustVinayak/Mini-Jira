@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage";
 import ProjectListPage from "./pages/ProjectListPage";
 import ProjectBoardPage from "./pages/ProjectBoardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import TeamPage from "./pages/TeamPage";
 
 function App() {
     return (
@@ -17,6 +18,24 @@ function App() {
                 <Route
                     path="/login"
                     element={<LoginPage />}
+                />
+
+                <Route
+                    path="/team"
+                    element={
+                        <ProtectedRoute>
+                            <TeamPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/team"
+                    element={
+                        <ProtectedRoute>
+                            <TeamPage />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route
