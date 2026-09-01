@@ -3,6 +3,18 @@
 A full-stack task and project management system inspired by tools like Jira. Built to demonstrate production-style backend architecture, secured REST APIs, and a modern React frontend with real-time drag-and-drop.
 
 ---
+
+## 📸 Screenshots/GIF
+
+![img.png](img.png)
+
+![img_1.png](img_1.png)
+
+![img_2.png](img_2.png)
+
+![img_3.png](img_3.png)
+
+---
 ## 🗺️ Overview
 
 Mini-Jira lets teams organize work across projects:
@@ -170,8 +182,6 @@ The app runs at `http://localhost:5173` and expects the backend at `http://local
 
 ## 📡 Current APIs
 
----
-
 ### 🌐 API Endpoints
 
 | Method | Endpoint | Access / Notes |
@@ -193,7 +203,6 @@ The app runs at `http://localhost:5173` and expects the backend at `http://local
 --- 
 ## 🧪 Testing
 
----
 ### Testing & Quality Assurance
 
 A full Postman collection (including negative/role-denial test cases) is included in the `/postman` directory.
@@ -228,8 +237,6 @@ Status Persisted ➔ Page Refreshed ➔ PATCH to Backend ➔ Task Dragged
 ---
 ## 🛡️ Security Architecture
 
----
-
 * **Password Hashing:** Passwords are fully hashed via **BCrypt** before persistence; plain text is never stored.
 * **Stateless Auth:** Implements stateless JWT-based authentication (`SessionCreationPolicy.STATELESS`) via a custom `JwtAuthFilter`.
 * **Dual-Layer Authorization:** Enforced via URL rules in `SecurityConfig` and method-level `@PreAuthorize` tags (e.g., Admin-only deletions), backed by negative test cases verifying `403 Forbidden` responses.
@@ -240,7 +247,6 @@ Status Persisted ➔ Page Refreshed ➔ PATCH to Backend ➔ Task Dragged
 
 ## 🌐 Deployment Architecture
 
----
 The entire application stack is deployed on a single **AWS EC2** instance (**Ubuntu 22.04 LTS**, `t2.micro` Free Tier node).
 
 ### 📐 Traffic & Data Flow
@@ -353,7 +359,6 @@ These deliberate design choices and technical trade-offs were made to streamline
 ---
 ## 👨‍💻 Author
 
----
 ### **Vinayak Bhatt**
 
 _Computer Science Graduate | Full Stack Developer_
