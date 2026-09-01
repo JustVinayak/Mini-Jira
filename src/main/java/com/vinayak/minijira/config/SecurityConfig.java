@@ -79,7 +79,7 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "http://43.204.230.107"
+                "http://13.232.190.7"
         ));
 
         configuration.setAllowedMethods(

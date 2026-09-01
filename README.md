@@ -47,15 +47,15 @@ This project was built in phases — backend foundation, business logic + testin
 
 
 
-| Layer | Technology                                                            |
-| :--- |:----------------------------------------------------------------------|
-| **Backend** | Java, Spring Boot, Spring Security, Spring Data JPA, Maven, Hibernate |
-| **Auth** | JWT (jjwt), BCrypt password hashing, role-based access control        |
-| **Database** | MySQL                                                                 |
-| **Testing** | JUnit 5, Mockito                                                      |
-| **Frontend** | React (Vite), React Router, Axios, `@dnd-kit`                         |
-| **Tooling** | Git, GitHub, Postman, ESLint                                          |
-| **Deployment** | AWS EC2 *(Phase 5 — in progress)*                                     |
+| Layer | Technology                                                                                         |
+| :--- |:---------------------------------------------------------------------------------------------------|
+| **Backend** | Java, Spring Boot, Spring Security, Spring Data JPA, Maven, Hibernate                              |
+| **Auth** | JWT (jjwt), BCrypt password hashing, role-based access control                                     |
+| **Database** | MySQL                                                                                              |
+| **Testing** | JUnit 5, Mockito                                                                                   |
+| **Frontend** | React (Vite), React Router, Axios, `@dnd-kit`                                                      |
+| **Tooling** | Git, GitHub, Postman, ESLint                                                                       |
+| **Deployment** | AWS EC2 (Ubuntu 22.04, t2.micro), nginx reverse proxy, systemd                                     |
 
 
 ---
@@ -237,11 +237,73 @@ Status Persisted ➔ Page Refreshed ➔ PATCH to Backend ➔ Task Dragged
 * **Dev Environment Note:** The `/api/users` endpoint is temporarily open (`permitAll()`) for local bootstrapping via a startup `DataSeeder`. *Production warning:* Must be restricted to `hasRole('ADMIN')` to eliminate privilege escalation risks.
 
 ---
-## 🧐 Challenges & Debugging
+
+## 🌐 Deployment Architecture
+
+---
+The entire application stack is deployed on a single **AWS EC2** instance (**Ubuntu 22.04 LTS**, `t2.micro` Free Tier node).
+
+### 📐 Traffic & Data Flow
+```text
+                  ┌───────────────────────────────┐
+                  │      Internet / Browser       │
+                  └───────────────┬───────────────┘
+                                  │ (Port 80)
+                                  ▼
+                        ┌───────────────────┐
+                        │    Nginx Proxy    │
+                        └─┬───────────────┬─┘
+                          │               │
+  (Serves Static Files) ──┘               └───> (Proxies /api/*)
+          ▼                                       ▼
+┌───────────────────┐                   ┌───────────────────┐
+│ React (Vite Build)│                   │ Spring Boot App   │
+│ Statically Served │                   │ (Port 8080/systemd)│
+└───────────────────┘                   └─────────┬─────────┘
+                                                  │
+                                                  ▼
+                                        ┌───────────────────┐
+                                        │ MySQL Database    │
+                                        │ (Localhost Access)│
+                                        └───────────────────┘
+```
 
 ---
 
-A few real-world bottlenecks encountered and resolved during development, highlighting key debugging processes and architectural takeaways:
+## ⚙️ Host Infrastructure Setup
+
+### 🔄 Daemon Management (`systemd`)
+The Spring Boot backend runs as a background daemon managed by a custom `systemd` service (`minijira.service`).
+* **Resilience:** Configured with `Restart=always` to ensure the application automatically recovers from unhandled crashes, active SSH session disconnects, and full instance reboots.
+* **Security:** Sensitive credentials (`DB_PASSWORD`, `JWT_SECRET`) are injected as isolated runtime environment variables directly inside the service configuration file, keeping them completely out of the source repository.
+
+### 🧠 Low-Memory Tuning (1GB RAM Optimization)
+Running a full Java runtime, an active relational database, and a reverse proxy on a `t2.micro` instance requires strict memory budgeting. To prevent the Linux **Out-Of-Memory (OOM) Killer** from terminating the MySQL daemon during application startups, the following resource caps were configured:
+* **Linux Kernel:** 1GB of dedicated virtual storage **Swap Space** allocated to handle traffic spikes.
+* **JVM Heap Space:** Capped explicitly at `-Xmx384m` via application execution arguments.
+* **MySQL Engine:** Engine buffer optimized by capping `innodb_buffer_pool_size` at `128M`.
+
+### 🛡️ Nginx Reverse Proxy Config
+Nginx intercepts incoming public traffic on port `80`. It serves compiled static web assets from the production client build directly while routing backend network payloads downstream:
+```nginx
+# Conceptual routing snippet
+location / {
+    root /var/www/minijira/frontend;
+    try_files uri uri/ /index.html;
+}
+
+location /api/ {
+    proxy_pass http://localhost:8080;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+}
+```
+---
+## 🧐 Challenges & Debugging
+
+A few real-world bottlenecks encountered and resolved during development and infrastructure deployment, highlighting key debugging processes and architectural takeaways:
+
+### 💻 Application-Level Architecture Issues
 
 * **The Misleading 403 (Masked 500 Error):**
   * **The Issue:** Spring Security was blocking the internal `/error` forward before Spring Boot could render the real exception. As a result, every unhandled application error surfaced to the client as a generic `403 Forbidden` regardless of its actual cause.
@@ -254,7 +316,21 @@ A few real-world bottlenecks encountered and resolved during development, highli
 * **Silent Jackson Infinite Recursion:**
   * **The Issue:** A bidirectional relationship between `Task.comments` and `Comment.task` caused Jackson's default serializer to walk the cycle indefinitely. Because the HTTP response started streaming with a `200 OK` status before the serializer failed, the client received a truncated, malformed JSON body. This caused the frontend's `.filter()` chain to break silently on only *one* specific project that actually contained comments.
   * **The Resolution:** Inspected the raw network payload directly rather than trusting the deceptive `200` status code. Resolved the issue by adding `@JsonIgnoreProperties` on the back-reference sides of each bidirectional relationship (`Comment.task`, `Task.project`).
-  * **Architectural Takeaway:** Migrating to dedicated Data Transfer Objects (DTOs) instead of exposing raw JPA entities directly to the controller layer is a scheduled technical debt follow-up.
+  * **Takeaway:** This served as a strong reminder that an HTTP `200 OK` status code does not guarantee a complete payload body. Abstracting raw JPA entities behind Data Transfer Objects (DTOs) remains the preferred long-term solution.
+
+### 🌐 Deployment & Infrastructure Challenges
+
+* **MySQL SSL Handshake Failures:**
+  * **The Issue:** The modern MySQL Connector/J (9.x) attempts an encrypted TLS handshake by default. This triggered a `Broken pipe` error during production startup against the Ubuntu EC2 instance's baseline database certificate setup.
+  * **The Resolution:** Appended `?useSSL=false&allowPublicKeyRetrieval=true` to the production JDBC connection URL string. Because the network traffic runs entirely within the isolated local loopback (`localhost`), encryption-in-transit provides no meaningful security boundary here.
+
+* **Host Engine Crash via Linux OOM-Killer:**
+  * **The Issue:** The target 1GB `t2.micro` cloud node abruptly terminated database tasks during concurrent backend startup routines. Running `journalctl` confirmed a `status=9/KILL` and `Failed with result 'oom-kill'` on `mysql.service`.
+  * **The Resolution:** Configured 1GB of virtual swap memory storage space on the host storage volume. Capped the active JVM heap size to `-Xmx384m` and constrained the standard engine runtime buffer pool footprint (`innodb_buffer_pool_size=128M`) inside the daemon configuration.
+
+* **Systemd Credential Drift & Access Denied:**
+  * **The Issue:** Following an administrative `ALTER USER` database password reset mid-debugging, subsequent application restart cycles failed due to raw database access rejections.
+  * **The Resolution:** Identified that the environmental variables injected into the custom `systemd` daemon initialization scripts had silently drifted from the true schema environment credentials. Manually synchronized the service template file and ran `systemctl daemon-reload`. This operational task is now a standardized credential rotation procedure.
 
 ---
 ## ⚠️ Known Limitations & Future Enhancements
